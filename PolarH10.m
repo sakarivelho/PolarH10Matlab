@@ -22,7 +22,7 @@ classdef PolarH10 < handle
         displayHr;
     end
     
-    properties 
+    properties
         accXData = [];
         accYData = [];
         accZData = [];
@@ -42,7 +42,7 @@ classdef PolarH10 < handle
             obj.accSampleRate = options.accSampleRate;
             obj.accRange = options.accRange;
             obj.displayHr = options.displayHr;
-                
+            
             obj.connection = ble(name);
             h = figure('Name',name);
             set(h,'color','w');
@@ -68,50 +68,29 @@ classdef PolarH10 < handle
             title("Ecg");
             ylim([-2500,2500]);
             set(gca,'xticklabel',[])
-            obj.write = characteristic(obj.connection,obj.serviceUUID,obj.writeCharacteristic);
-            obj.write.DataAvailableFcn = @displayWriteData;
-            obj.notify = characteristic(obj.connection,obj.serviceUUID,obj.notifyCharacteristic);
-            obj.notify.DataAvailableFcn  = @displayCharcteristicData;
             
+            obj.write = characteristic(obj.connection,obj.serviceUUID,obj.writeCharacteristic);
+            obj.write.DataAvailableFcn = @(src,event) obj.displayIncomingWriteMessage(src,event);
+            obj.notify = characteristic(obj.connection,obj.serviceUUID,obj.notifyCharacteristic);
+            obj.notify.DataAvailableFcn  = @(src,event) obj.handleIncomingData(src,event);          
             if obj.displayHr
                 obj.hrChar = characteristic(obj.connection, "heart rate", "heart rate measurement");
-                obj.hrChar.DataAvailableFcn = @displayHrData;
+                obj.hrChar.DataAvailableFcn = @(src,event) obj.displayHrData(src,event);
             end
+            
             obj.plotHandleX = plotHandleX;
             obj.plotHandleY = plotHandleY;
-            obj.plotHandleZ = plotHandleZ;          
+            obj.plotHandleZ = plotHandleZ;
             obj.plotHandleEcg = plothandleEcg;
-            function displayCharcteristicData(src,~)
-                data = read(src,'oldest');
-                obj.handleIncomingData(data);
-            end
             
-            function displayWriteData(src,~)
-                data = read(src,'oldest');
-                obj.displayIncomingWriteMessage(data);                
-            end
             
-            function displayHrData(src,~)
-                data = read(src,'oldest');
-                flag = uint8(data(1));
-                % Get the first bit of the flag, which indicates the format of the heart rate value
-                heartRateValueFormat = bitget(flag, 1);
-                if heartRateValueFormat == 0
-                    % Heart rate format is uint8
-                    heartRate = data(2);
-                else
-                    % Heart rate format is uint16
-                    heartRate = double(typecast(uint8(data(2:3)), 'uint16'));
-                end
-               fprintf('Heart rate measurement: %d(bpm)\n', heartRate);
-            end
-           
         end
     end
     methods (Access=private)
         
-        function handleIncomingData(obj,data)
-            u8Data = uint8(data);
+        function handleIncomingData(obj,src,~)
+            data = read(src,'oldest');
+            u8Data =uint8(data);
             type = data(1);
             switch type
                 case 2
@@ -145,7 +124,7 @@ classdef PolarH10 < handle
             padded = [zeros(height(shaped),1),shaped];
             % reshape back to column vector, cast to int32 and bitshift all values -8
             ecgData = bitshift(typecast(reshape(padded',1,[]),'int32'),-8,'int32');
-            timestamps = ones(1,length(ecgData))*timestamp;           
+            timestamps = ones(1,length(ecgData))*timestamp;
             obj.ecgData = [obj.ecgData,ecgData];
             obj.ecgTimeStamps = [obj.ecgTimeStamps,timestamps];
             obj.plotData();
@@ -156,10 +135,10 @@ classdef PolarH10 < handle
             %             Bytes 11:end  for acc data(x,y,z) as int16
             timestamp = double(typecast(swapbytes(data(2:9)),'uint64'));
             timestamp = timestamp/(10^9);
-%             Convert to int16
+            %             Convert to int16
             acc8 = data(11:end);
-%           Cast to int16,convert to double and divide by 1000 to get
-%           millisG's to G's
+            %           Cast to int16,convert to double and divide by 1000 to get
+            %           millisG's to G's
             acc = double(typecast(acc8,'int16'))/1000;
             x = acc(1:3:end);
             y = acc(2:3:end);
@@ -171,7 +150,7 @@ classdef PolarH10 < handle
             obj.accTimeStamps = [obj.accTimeStamps timestamps];
         end
         
-   
+        
         
         function plotData(obj)
             obj.plotHandleX.YData = [obj.accXData];
@@ -232,12 +211,11 @@ classdef PolarH10 < handle
             obj.ecgTimeStamps = [];
         end
         
-        function displayIncomingWriteMessage(obj,data)
-          
+        function displayIncomingWriteMessage(obj,src,~)
+            data = read(src,'oldest');
             if data(1) ~= 240
                 return
             end
-            
             outMsg = string(datetime('now','Format',"HH:mm:ss")) + " Polar H10 command: ";
             switch data(2)
                 case 2
@@ -268,6 +246,21 @@ classdef PolarH10 < handle
                     outMsg = sprintf("%s Status: Error (code %i)",outMsg,data(4));
             end
             disp(outMsg);
+        end
+        
+        function displayHrData(obj,src,~)
+            data = read(src,'oldest');
+            flag = uint8(data(1));
+            % Get the first bit of the flag, which indicates the format of the heart rate value
+            heartRateValueFormat = bitget(flag, 1);
+            if heartRateValueFormat == 0
+                % Heart rate format is uint8
+                heartRate = data(2);
+            else
+                % Heart rate format is uint16
+                heartRate = double(typecast(uint8(data(2:3)), 'uint16'));
+            end
+            fprintf('Heart rate measurement: %d(bpm)\n', heartRate);
         end
         
     end

@@ -6,4 +6,4 @@ deviceName = list.Name(devN);
 if isempty(deviceName)
     return
 end
-h10 = PolarH10(deviceName,'accSampleRate',100,'accRange',8);
+h10 = PolarH10(deviceName,'accSampleRate',100,'accRange',8,'displayHr',true);
