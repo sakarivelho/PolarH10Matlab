@@ -11,6 +11,9 @@ load(fName);
 
 
 %% Plot data
+start = min([results.ecgTimestamps,results.accTimestamps]);
+results.ecgTimestamps = results.ecgTimestamps - start;
+results.accTimestamps = results.accTimestamps - start;
 j = figure;
 ax1 = subplot(2,1,1);
 plot(results.ecgTimestamps,results.ecgData,'DisplayName','Ecg');

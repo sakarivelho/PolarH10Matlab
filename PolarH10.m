@@ -178,8 +178,8 @@ classdef PolarH10 < handle
             obj.plotHandleY.YData = [obj.accYData];
             obj.plotHandleZ.YData = [obj.accZData];
             obj.plotHandleEcg.YData = [obj.ecgData];
-            obj.plotHandleEcg.Parent.XLim = [length(obj.plotHandleEcg.YData)-obj.plotLength*obj.accSampleRate, length(obj.plotHandleEcg.YData)];
-            obj.plotHandleX.Parent.XLim = [length(obj.plotHandleX.YData)-obj.plotLength*obj.ecgSampleRate, length(obj.plotHandleX.YData)];
+            obj.plotHandleEcg.Parent.XLim = [length(obj.plotHandleEcg.YData)-obj.plotLength*obj.ecgSampleRate, length(obj.plotHandleEcg.YData)];
+            obj.plotHandleX.Parent.XLim = [length(obj.plotHandleX.YData)-obj.plotLength*obj.accSampleRate, length(obj.plotHandleX.YData)];
         end
         
         
