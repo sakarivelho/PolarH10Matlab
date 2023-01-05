@@ -113,8 +113,7 @@ classdef PolarH10 < handle
         end
         
         function readPolarEcgData(obj,data)
-            tempEcg = [];
-            samples = (length(data)-10)/3;
+
             timestamp = double(typecast(swapbytes(data(2:9)),'uint64'));
             timestamp = timestamp/(10^9);
             % Convert int24 array to int32 array:
