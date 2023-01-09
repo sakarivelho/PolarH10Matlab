@@ -1,5 +1,5 @@
 classdef PolarH10 < handle
-    % % Object to capture PolarH10 ecg & acc data
+    % % PolarH10 ecg & acc data
     % % Polar measurement data specification:
     % % https://github.com/polarofficial/polar-ble-sdk/blob/master/technical_documentation/Polar_Measurement_Data_Specification.pdf
     properties (Access = private)
